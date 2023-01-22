@@ -1,0 +1,118 @@
+---
+title: "Stat 523 Project 2"
+author: "Andrew Alexandru"
+date: "30065419"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(readr)
+
+#Data Input
+patch730 = read_csv("C:/Users/Andrew/OneDrive/Desktop/7_30.csv")
+patch729 = read_csv("C:/Users/Andrew/OneDrive/Desktop/7_29.csv")
+patch728 = read_csv("C:/Users/Andrew/OneDrive/Desktop/7_28.csv")
+patch720 = read_csv("C:/Users/Andrew/OneDrive/Desktop/7_20.csv")
+patch711 = read_csv("C:/Users/Andrew/OneDrive/Desktop/7_11.csv")
+patchbefore7 = read_csv("C:/Users/Andrew/OneDrive/Desktop/before7_00.csv")
+
+```
+
+## Professional DotA 2 (video game) match durations
+A video game where two teams of 5 players try to destroy the enemy base.
+
+How has the strength of defense changed during the the life time of the game (or recently)?
+
+Longer games means it is easier to defend and harder to attack.
+
+## Durations (in seconds) per Patch
+```{r, echo=FALSE}
+boxplot(patchbefore7$`AVG Duration`,patch711$`AVG Duration`,patch720$`AVG Duration`,patch728$`AVG Duration`,patch729$`AVG Duration`,patch730$`AVG Duration`, names = list("Before 7.00","7.11", "7.20", "7.28", "7.29", "7.30"))
+```
+
+## Pairwise Wilcox Tests
+```{r, echo=FALSE}
+durations = c(patchbefore7$`AVG Duration`,patch711$`AVG Duration`,patch720$`AVG Duration`,patch728$`AVG Duration`,patch729$`AVG Duration`,patch730$`AVG Duration`)
+patchs = c(rep("pre7.00",620), rep("7.11",193), rep("7.20",526), rep("7.28",1000), rep("7.29",1000), rep("7.30",194))
+```
+```{r, echo=TRUE}
+pairwise.wilcox.test(durations,patchs, p.adjust.method = "none", exact=FALSE)
+```
+Many Nulls: Distributions between Patches are the same.
+
+Many Alts: Distributions between Patches are different.
+
+## Match ups
+There there either seems to be either large differences or none at all between the patches expect for:
+
+> - Patch 7.30 and Patch 7.29 **(p=0.09)**
+
+> - Patch 7.30 and before Patch 7.00 **(p=0.051)**
+
+We see if parametric methods will allow us to reject the null.
+
+## Normality Test: 7.30
+```{r, echo=TRUE}
+shapiro.test(patch730$`AVG Duration`)
+```
+Seems to be normal
+
+## Normality Test: 7.29
+```{r, echo=TRUE}
+shapiro.test(patch729$`AVG Duration`)
+```
+Fails normality test however most large n samples do.
+
+## QQPlot: 7.29
+```{r, echo=FALSE}
+qqnorm(patch729$`AVG Duration`)
+qqline(patch729$`AVG Duration`)
+```
+Fails...
+
+## F-test: 7.30 and 7.29
+```{r, echo=TRUE}
+var.test(patch729$`AVG Duration`,patch730$`AVG Duration`)
+```
+At least the variance is the same.
+
+## T-test: 7.30 and 7.29
+```{r, echo=TRUE}
+t.test(patch729$`AVG Duration`,patch730$`AVG Duration`, var.equal = TRUE)
+```
+It is able to reject the null, but at what cost?
+
+## Normality Test: Before 7.00
+```{r, echo=TRUE}
+shapiro.test(patchbefore7$`AVG Duration`)
+```
+Not again...
+
+## QQPlot: Before 7.00
+```{r, echo=FALSE}
+qqnorm(patchbefore7$`AVG Duration`)
+qqline(patchbefore7$`AVG Duration`)
+```
+Looks better then the last one.
+
+## F-Test: 7.30 and Before 7.00
+```{r, echo=TRUE}
+var.test(patchbefore7$`AVG Duration`,patch730$`AVG Duration`)
+```
+That's okay, we can still run the t-test.
+
+## T-Test: 7.30 and Before 7.00
+```{r, echo=TRUE}
+t.test(patchbefore7$`AVG Duration`,patch730$`AVG Duration`, var.equal = FALSE)
+```
+We fail to reject the null again, and really can conclude that there is no difference.
+
+## Conclusion?
+We were able to reject the null with the parametric test between 7.30 and 7.29 but not with the nonparametric one because of the extra power we got. However the QQ plot really showed that 7.29 was not normal and maybe we rejected the null and found a difference not because of a real difference in median but because of the difference in distribution.
+
+## Outliers
+They were not excluded because of the physical bounds of the data. A match can go on forever (world record is around 3 hours) however it can't go under 0, therefor excluding outliers from only one half of the data is biased, and would mean the data looks more normal when its physically impossible to do so. (Poisson distribution maybe)
+```{r, echo=FALSE}
+hist(patch728$`AVG Duration`)
+```

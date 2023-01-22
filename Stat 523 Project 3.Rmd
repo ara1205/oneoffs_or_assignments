@@ -1,0 +1,69 @@
+---
+title: "Stat 523 Project 3"
+author: "Andrew Alexandru"
+date: "30065419"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+depth = c(9.3,9.4,9.6,10.0,9.4,9.3,9.8,9.9,9.2,9.4,9.5,9.7,9.7,9.6,10.0,10.2)
+tips = rep(c("Tip1","Tip2","Tip3","Tip4"), each=4)
+metal = rep(1:4, 4)
+
+data = data.frame(depth,tips,metal)
+datacharts = reshape(data = data, idvar="metal", v.names = "depth", timevar = "tips", direction = "wide")
+datapresent = datacharts
+colnames(datapresent) = c("Metal Ingot", "Tip 1", "Tip 2", "Tip 3", "Tip 4")
+```
+
+## Which Metal Cutting Tip is the Hardest?
+> - Testing out 4 different kinds of tips
+> - Testing on 4 different metal ingots (same metal but each ingot could be created at different temperatures resulting in different properties)
+> - Depth will be in mm the length in which a given tip can penetrate the metal ingot at a specific pressure.
+
+## RCBD Data
+```{r}
+datapresent
+```
+Data can be found at: https://web.ma.utexas.edu/users/mks/384E09/rcbdexampleslides.pdf
+
+## Boxplots showing depth (mm) by Tip
+```{r}
+boxplot(datacharts$depth.Tip1,datacharts$depth.Tip2,datacharts$depth.Tip3,datacharts$depth.Tip4)
+```
+
+## Quade Test
+Less then 5 treatment so we will do a Quade Test over the Friedman Test
+```{r, echo=TRUE}
+quade.test(depth, groups = tips, blocks = metal, p.adjust.methods = "none")
+```
+
+## Posthoc Quade Test
+```{r, echo=TRUE, warning=FALSE}
+library(PMCMRplus)
+quadeAllPairsTest(y=depth, groups = tips, blocks = metal, p.adjust.method = "none")
+```
+
+## Comparison to parametric method?
+```{r}
+shapiro.test(datacharts$depth.Tip1)
+shapiro.test(datacharts$depth.Tip2)
+shapiro.test(datacharts$depth.Tip3)
+shapiro.test(datacharts$depth.Tip4)
+```
+
+## Comparison to Pairwise Wilcox
+```{r, echo=TRUE}
+pairwise.wilcox.test(depth,tips, p.adjust.method = "none", exact=FALSE)
+```
+
+## Comparison
+The pairwise posthoc Quade test gave us a p-value of **0.0047** between Tip 3 and Tip 4, while the pairwise Wilcox test only gave us **0.081**.
+
+The variance we were able to explain away due to blocking the metal variable allows us to find a statistically significant result.
+
+## Conclusion and Questions
+Tip 4 is significantly harder then Tip 3
+

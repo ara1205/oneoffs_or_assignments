@@ -1,0 +1,139 @@
+---
+title: "Weekend Crypto Price Changes"
+author: "Andrew Alexandru"
+date: "10/6/2021"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(readr)
+gemini_BTCUSD_day <- read_csv("C:/Users/Andrew/OneDrive/Desktop/gemini_BTCUSD_day.csv", 
+                              col_types = cols(Date = col_character()), 
+                              skip = 1)
+gemini_ETHUSD_day <- read_csv("C:/Users/Andrew/OneDrive/Desktop/gemini_ETHUSD_day.csv", 
+                              col_types = cols(Date = col_character()), 
+                              skip = 1)
+
+
+
+
+#BTC cleaning
+btcdata = data.frame(gemini_BTCUSD_day$Date, gemini_BTCUSD_day$Open, gemini_BTCUSD_day$Close)
+colnames(btcdata) = c("Date","Open","Close")
+btcdata$Change = ((btcdata$Close-btcdata$Open)/btcdata$Open)*100
+btcdatesplit = data.frame(do.call('rbind', strsplit(as.character(btcdata$Date),' ',fixed=TRUE)))
+btcdata$Day = weekdays(as.Date(btcdatesplit$X1,"%Y-%m-%d"))
+btcdata = head(btcdata, -1)
+
+#ETH cleaning
+ethdata = data.frame(gemini_ETHUSD_day$Date, gemini_ETHUSD_day$Open, gemini_ETHUSD_day$Close)
+colnames(ethdata) = c("Date","Open","Close")
+ethdata$Change = ((ethdata$Close-ethdata$Open)/ethdata$Open)*100
+ethdatesplit = data.frame(do.call('rbind', strsplit(as.character(ethdata$Date),' ',fixed=TRUE)))
+ethdata$Day = weekdays(as.Date(ethdatesplit$X1,"%Y-%m-%d"))
+ethdata = head(ethdata, -1)
+```
+
+## Do Crypto Prices Increase on the Weekends
+
+With the rise of easy to use trading apps, are retail investors increasing the prices of coins during the weekend, when they have more time?
+
+
+## BTC Daily Price Changes
+```{r echo=TRUE}
+hist(btcdata$Change)
+```
+
+## Normality Test for BTC Price Changes
+
+```{r echo=TRUE}
+shapiro.test(btcdata$Change)
+```
+
+## QQ Plot for BTC Price Changes
+```{r echo=TRUE}
+qqnorm(btcdata$Change)
+```
+
+## Does BTC's price increase on weekends?
+```{r}
+btchighersuc = nrow(btcdata[btcdata$Day %in% c("Sunday","Saturday") & btcdata$Change > 0 ,])
+btchighertotal = nrow(btcdata[btcdata$Day %in% c("Sunday","Saturday"),])
+binom.test(btchighersuc,btchighertotal, alternative = "greater")
+```
+Alt: The probability that BTC daily return will be positive on a weekend day is greater then 50%.
+
+Null: The probability that BTC daily return will be positive on a weekend day is less then or equal to 50%
+
+## Yes!
+Because it increases in general.
+
+## BTC price increases everyday
+```{r}
+btchighersuctotal = nrow(btcdata[btcdata$Change>0,])
+binom.test(btchighersuctotal,nrow(btcdata), alternative = "greater")
+```
+Alt: The probability that BTC daily return will be positive on an given day is greater then 50%.
+
+Null: The probability that BTC daily return will be positive on an given day is less then or equal to 50%
+
+## The same is true for ETH
+```{r}
+ethhighersuc = nrow(ethdata[ethdata$Day %in% c("Sunday","Saturday") & ethdata$Change > 0 ,])
+ethhighertotal = nrow(ethdata[ethdata$Day %in% c("Sunday","Saturday"),])
+binom.test(ethhighersuc,ethhighertotal, alternative = "greater")
+```
+Alt: The probability that ETH daily return will be positive on a weekend day is greater then 50%.
+
+Null: The probability that ETH daily return will be positive on a weekend day is less then or equal to 50%
+
+---
+
+```{r}
+ethhighersuctotal = nrow(ethdata[ethdata$Change>0,])
+binom.test(ethhighersuctotal,nrow(ethdata), alternative = "greater")
+```
+Alt: The probability that ETH daily return will be positive on any day is greater then 50%.
+
+Null: The probability that ETH daily return will be positive on any day is less then or equal to 50%
+
+## Yes, Crypto Prices Increase on the Weekends*
+Because crypto prices increase in general.
+
+Perhaps all the extra time trading can also be selling therfor increase volatility?
+
+## BTC Volatility on Weekends
+```{r}
+btcvolsuc = nrow(btcdata[btcdata$Day %in% c("Sunday","Saturday") & abs(btcdata$Change) > 5 ,])
+btcvoltotal = nrow(btcdata[abs(btcdata$Change) > 5 ,])
+binom.test(btcvolsuc,btcvoltotal,p=2/7,alternative = "two.sided")
+```
+Alt: The probability of a greater then 5% swing occurring on the weekend is not 2/7.
+
+Null: The probability of a greater then 5% swing occurring on the weekend is 2/7.
+
+
+## ETH Volatility on Weekends
+```{r}
+ethvolsuc = nrow(ethdata[ethdata$Day %in% c("Sunday","Saturday") & abs(ethdata$Change) > 5 ,])
+ethvoltotal = nrow(ethdata[abs(ethdata$Change) > 5 ,])
+
+
+binom.test(ethvolsuc,ethvoltotal,p=2/7,alternative = "two.sided")
+```
+Alt: The probability of a greater then 5% swing occurring on the weekend is not 2/7.
+
+Null: The probability of a greater then 5% swing occurring on the weekend is is 2/7.
+
+
+## Difference of results
+Possible explanations for my analysis:
+
+- My definition of a weekend is a little odd as the data I used it at daily intervals at 4am.
+- My definition of volatility is quite rudimentary as 5% swings or greater.
+
+## Credits
+My data is from: https://www.cryptodatadownload.com/data/gemini/
+
+Seth, S. (2021, August 24). Bitcoin: Biggest price swings happen on weekends. Investopedia. Retrieved October 6, 2021, from https://www.investopedia.com/news/bitcoin-biggest-price-swings-happen-weekends/. 
